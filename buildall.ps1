@@ -1,0 +1,55 @@
+param([String]$platform="x86")
+get-childitem -path "..\" -Include obj,bin -Recurse -force | Remove-Item -Force -Recurse
+
+
+
+function Build-Sln([String] $path, [String] $configuration, [String] $platform){
+	$msbuild = Find-MsBuild
+	Write-Output "$msbuild $item /t:Rebuild /t:restore /p:Configuration=$configuration /p:Platform="$platform\""
+    & "$msbuild" $item /t:"Restore;Rebuild" /p:Configuration=$configuration /p:Platform="$platform"
+	write-host $Result
+	if ($LASTEXITCODE -ne 0)
+	{
+		pause
+	}
+}
+
+Function Find-MsBuild([int] $MaxVersion = 2019)
+{
+    $agentPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\msbuild.exe"
+    $devPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
+    $proPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe"
+    $communityPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
+    $fallback2015Path = "${Env:ProgramFiles(x86)}\MSBuild\14.0\Bin\MSBuild.exe"
+    $fallback2013Path = "${Env:ProgramFiles(x86)}\MSBuild\12.0\Bin\MSBuild.exe"
+    $fallbackPath = "C:\Windows\Microsoft.NET\Framework\v4.0.30319"
+		
+    If ((2017 -le $MaxVersion) -And (Test-Path $agentPath)) { return $agentPath } 
+    If ((2017 -le $MaxVersion) -And (Test-Path $devPath)) { return $devPath } 
+    If ((2017 -le $MaxVersion) -And (Test-Path $proPath)) { return $proPath } 
+    If ((2017 -le $MaxVersion) -And (Test-Path $communityPath)) { return $communityPath } 
+    If ((2015 -le $MaxVersion) -And (Test-Path $fallback2015Path)) { return $fallback2015Path } 
+    If ((2013 -le $MaxVersion) -And (Test-Path $fallback2013Path)) { return $fallback2013Path } 
+    If (Test-Path $fallbackPath) { return $fallbackPath } 
+        
+    throw "Yikes - Unable to find msbuild"
+}
+
+$baseDir = (Get-Item -Path "..\Libraries\" -Verbose).FullName
+$items = Get-ChildItem -Path $baseDir -Include *.sln -Recurse
+foreach ($item in $items){
+	Build-Sln $item "Debug" "Any CPU"
+}
+
+$baseDir = (Get-Item -Path "..\Modules\" -Verbose).FullName
+$items = Get-ChildItem -Path $baseDir -Include *.sln -Recurse
+foreach ($item in $items){
+	Build-Sln $item "Debug" "x86"
+}
+
+$baseDir = (Get-Item -Path "..\Applications\" -Verbose).FullName
+$items = Get-ChildItem -Path $baseDir -Include *.sln -Recurse
+foreach ($item in $items){
+	
+	Build-Sln $item "Debug" "x86"
+}
