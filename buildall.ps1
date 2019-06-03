@@ -5,7 +5,7 @@ get-childitem -path "..\" -Include obj,bin -Recurse -force | Remove-Item -Force 
 
 function Build-Sln([String] $path, [String] $configuration, [String] $platform){
 	$msbuild = Find-MsBuild
-	Write-Output "$msbuild $item /t:Rebuild /t:restore /p:Configuration=$configuration /p:Platform="$platform\""
+	Write-Host -ForegroundColor Green "$msbuild $item /t:Rebuild /t:restore /p:Configuration=$configuration /p:Platform="$platform\""
     & "$msbuild" $item /t:"Restore;Rebuild" /p:Configuration=$configuration /p:Platform="$platform"
 	write-host $Result
 	if ($LASTEXITCODE -ne 0)
@@ -16,6 +16,7 @@ function Build-Sln([String] $path, [String] $configuration, [String] $platform){
 
 Function Find-MsBuild([int] $MaxVersion = 2019)
 {
+	$agentPath2 = "$Env:programfiles (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Current\Bin\msbuild.exe"
     $agentPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\msbuild.exe"
     $devPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
     $proPath = "$Env:programfiles (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe"
@@ -23,7 +24,7 @@ Function Find-MsBuild([int] $MaxVersion = 2019)
     $fallback2015Path = "${Env:ProgramFiles(x86)}\MSBuild\14.0\Bin\MSBuild.exe"
     $fallback2013Path = "${Env:ProgramFiles(x86)}\MSBuild\12.0\Bin\MSBuild.exe"
     $fallbackPath = "C:\Windows\Microsoft.NET\Framework\v4.0.30319"
-		
+	If ((2019 -le $MaxVersion) -And (Test-Path $agentPath2)) { return $agentPath2 } 
     If ((2017 -le $MaxVersion) -And (Test-Path $agentPath)) { return $agentPath } 
     If ((2017 -le $MaxVersion) -And (Test-Path $devPath)) { return $devPath } 
     If ((2017 -le $MaxVersion) -And (Test-Path $proPath)) { return $proPath } 
